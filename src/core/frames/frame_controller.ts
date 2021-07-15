@@ -42,7 +42,12 @@ export class FrameController implements AppearanceObserverDelegate, FetchRequest
       }
       this.linkInterceptor.start()
       this.formInterceptor.start()
-      this.sourceURLChanged()
+
+      const src = this.element.getAttribute("src")
+
+      if(window.location.pathname !== src){
+        this.sourceURLChanged()
+      }
     }
   }
 
