@@ -345,16 +345,27 @@ function getFrameElementById(id: string | null) {
 function activateElement(element: Element | null, currentURL?: string | null) {
   if (element) {
     const src = element.getAttribute("src")
-    if (src != null && currentURL != null && urlsAreEqual(src, currentURL)) {
-      throw new Error(`Matching <turbo-frame id="${element.id}"> element has a source URL which references itself`)
-    }
-    if (element.ownerDocument !== document) {
-      element = document.importNode(element, true)
-    }
 
-    if (element instanceof FrameElement) {
-      element.connectedCallback()
-      return element
+    // Allow the currentURL === src, if they are equal, we don't throw
+    // and don't call callbacks.
+    // If !==, then just proceed normally
+    if (src != null && currentURL != null && urlsAreEqual(src, currentURL)) {
+      if (element.ownerDocument !== document) {
+        element = document.importNode(element, true)
+      }
+
+      if (element instanceof FrameElement) {
+        return element
+      }
+    } else {
+      if (element.ownerDocument !== document) {
+        element = document.importNode(element, true)
+      }
+
+      if (element instanceof FrameElement) {
+        element.connectedCallback()
+        return element
+      }
     }
   }
 }
