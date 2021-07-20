@@ -2,6 +2,12 @@ import { Renderer } from "./renderer"
 import { Snapshot } from "./snapshot"
 import { Position } from "./types"
 
+export class AlreadyRenderingError extends Error {
+  constructor(message: string) {
+    super(message)
+  }
+}
+
 export interface ViewDelegate<S extends Snapshot> {
   allowsImmediateRender(snapshot: S, resume: (value: any) => void): boolean
   viewRenderedSnapshot(snapshot: S, isPreview: boolean): void
@@ -47,7 +53,8 @@ export abstract class View<E extends Element, S extends Snapshot<E> = Snapshot<E
 
   async render(renderer: R) {
     if (this.renderer) {
-      throw new Error("rendering is already in progress")
+      // throw new Error("rendering is already in progress")
+      return Promise.reject(new AlreadyRenderingError(""));
     }
 
     const { isPreview, shouldRender, newSnapshot: snapshot } = renderer
@@ -89,7 +96,7 @@ export abstract class View<E extends Element, S extends Snapshot<E> = Snapshot<E
   }
 
   async renderSnapshot(renderer: R) {
-    await renderer.render()
+      await renderer.render()
   }
 
   finishRenderingSnapshot(renderer: R) {
