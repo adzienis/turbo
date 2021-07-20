@@ -5,7 +5,7 @@ import { AppearanceObserver, AppearanceObserverDelegate } from "../../observers/
 import { parseHTMLDocument } from "../../util"
 import { FormSubmission, FormSubmissionDelegate } from "../drive/form_submission"
 import { Snapshot } from "../snapshot"
-import { ViewDelegate } from "../view"
+import { ViewDelegate, AlreadyRenderingError } from "../view"
 import { expandURL, urlsAreEqual, Locatable } from "../url"
 import { FormInterceptor, FormInterceptorDelegate } from "./form_interceptor"
 import { FrameView } from "./frame_view"
@@ -113,7 +113,10 @@ export class FrameController implements AppearanceObserverDelegate, FetchRequest
         await this.view.render(renderer)
       }
     } catch (error) {
-      console.error(error)
+      if(error instanceof AlreadyRenderingError){
+        return;
+      }
+
       this.view.invalidate()
     }
   }
