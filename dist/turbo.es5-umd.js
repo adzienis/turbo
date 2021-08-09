@@ -1041,32 +1041,13 @@ Copyright © 2021 Basecamp, LLC
         return Snapshot;
     }());
 
-    var FormInterceptor = (function () {
-        function FormInterceptor(delegate, element) {
-            var _this = this;
-            this.submitBubbled = (function (event) {
-                if (event.target instanceof HTMLFormElement) {
-                    var form = event.target;
-                    var submitter = event.submitter || undefined;
-                    if (_this.delegate.shouldInterceptFormSubmission(form, submitter)) {
-                        event.preventDefault();
-                        event.stopImmediatePropagation();
-                        _this.delegate.formSubmissionIntercepted(form, submitter);
-                    }
-                }
-            });
-            this.delegate = delegate;
-            this.element = element;
+    var AlreadyRenderingError = (function (_super) {
+        __extends(AlreadyRenderingError, _super);
+        function AlreadyRenderingError(message) {
+            return _super.call(this, message) || this;
         }
-        FormInterceptor.prototype.start = function () {
-            this.element.addEventListener("submit", this.submitBubbled);
-        };
-        FormInterceptor.prototype.stop = function () {
-            this.element.removeEventListener("submit", this.submitBubbled);
-        };
-        return FormInterceptor;
-    }());
-
+        return AlreadyRenderingError;
+    }(Error));
     var View = (function () {
         function View(delegate, element) {
             this.resolveRenderPromise = function (value) { };
@@ -1104,7 +1085,7 @@ Copyright © 2021 Basecamp, LLC
                     switch (_a.label) {
                         case 0:
                             if (this.renderer) {
-                                throw new Error("rendering is already in progress");
+                                return [2, Promise.reject(new AlreadyRenderingError(""))];
                             }
                             isPreview = renderer.isPreview, shouldRender = renderer.shouldRender, snapshot = renderer.newSnapshot;
                             if (!shouldRender) return [3, 7];
@@ -1169,6 +1150,32 @@ Copyright © 2021 Basecamp, LLC
             renderer.finishRendering();
         };
         return View;
+    }());
+
+    var FormInterceptor = (function () {
+        function FormInterceptor(delegate, element) {
+            var _this = this;
+            this.submitBubbled = (function (event) {
+                if (event.target instanceof HTMLFormElement) {
+                    var form = event.target;
+                    var submitter = event.submitter || undefined;
+                    if (_this.delegate.shouldInterceptFormSubmission(form, submitter)) {
+                        event.preventDefault();
+                        event.stopImmediatePropagation();
+                        _this.delegate.formSubmissionIntercepted(form, submitter);
+                    }
+                }
+            });
+            this.delegate = delegate;
+            this.element = element;
+        }
+        FormInterceptor.prototype.start = function () {
+            this.element.addEventListener("submit", this.submitBubbled);
+        };
+        FormInterceptor.prototype.stop = function () {
+            this.element.removeEventListener("submit", this.submitBubbled);
+        };
+        return FormInterceptor;
     }());
 
     var FrameView = (function (_super) {
@@ -3500,7 +3507,9 @@ Copyright © 2021 Basecamp, LLC
                         case 5: return [3, 7];
                         case 6:
                             error_2 = _b.sent();
-                            console.error(error_2);
+                            if (error_2 instanceof AlreadyRenderingError) {
+                                return [2];
+                            }
                             this.view.invalidate();
                             return [3, 7];
                         case 7: return [2];
@@ -3979,8 +3988,10 @@ Copyright © 2021 Basecamp, LLC
     }(HTMLElement));
 
     FrameElement.delegateConstructor = FrameController;
-    customElements.define("turbo-frame", FrameElement);
-    customElements.define("turbo-stream", StreamElement);
+    if (!customElements.get('turbo-frame'))
+        customElements.define("turbo-frame", FrameElement);
+    if (!customElements.get('turbo-stream'))
+        customElements.define("turbo-stream", StreamElement);
 
     (function () {
         var element = document.currentScript;

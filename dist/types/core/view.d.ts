@@ -1,6 +1,9 @@
 import { Renderer } from "./renderer";
 import { Snapshot } from "./snapshot";
 import { Position } from "./types";
+export declare class AlreadyRenderingError extends Error {
+    constructor(message: string);
+}
 export interface ViewDelegate<S extends Snapshot> {
     allowsImmediateRender(snapshot: S, resume: (value: any) => void): boolean;
     viewRenderedSnapshot(snapshot: S, isPreview: boolean): void;
@@ -19,7 +22,7 @@ export declare abstract class View<E extends Element, S extends Snapshot<E> = Sn
     get scrollRoot(): {
         scrollTo(x: number, y: number): void;
     };
-    render(renderer: R): Promise<void>;
+    render(renderer: R): Promise<undefined>;
     invalidate(): void;
     prepareToRenderSnapshot(renderer: R): void;
     markAsPreview(isPreview: boolean): void;

@@ -669,30 +669,11 @@ var tests_unit = (function (exports, intern) {
         }
     }
 
-    class FormInterceptor {
-        constructor(delegate, element) {
-            this.submitBubbled = ((event) => {
-                if (event.target instanceof HTMLFormElement) {
-                    const form = event.target;
-                    const submitter = event.submitter || undefined;
-                    if (this.delegate.shouldInterceptFormSubmission(form, submitter)) {
-                        event.preventDefault();
-                        event.stopImmediatePropagation();
-                        this.delegate.formSubmissionIntercepted(form, submitter);
-                    }
-                }
-            });
-            this.delegate = delegate;
-            this.element = element;
-        }
-        start() {
-            this.element.addEventListener("submit", this.submitBubbled);
-        }
-        stop() {
-            this.element.removeEventListener("submit", this.submitBubbled);
+    class AlreadyRenderingError extends Error {
+        constructor(message) {
+            super(message);
         }
     }
-
     class View {
         constructor(delegate, element) {
             this.resolveRenderPromise = (value) => { };
@@ -719,7 +700,7 @@ var tests_unit = (function (exports, intern) {
         }
         async render(renderer) {
             if (this.renderer) {
-                throw new Error("rendering is already in progress");
+                return Promise.reject(new AlreadyRenderingError(""));
             }
             const { isPreview, shouldRender, newSnapshot: snapshot } = renderer;
             if (shouldRender) {
@@ -762,6 +743,30 @@ var tests_unit = (function (exports, intern) {
         }
         finishRenderingSnapshot(renderer) {
             renderer.finishRendering();
+        }
+    }
+
+    class FormInterceptor {
+        constructor(delegate, element) {
+            this.submitBubbled = ((event) => {
+                if (event.target instanceof HTMLFormElement) {
+                    const form = event.target;
+                    const submitter = event.submitter || undefined;
+                    if (this.delegate.shouldInterceptFormSubmission(form, submitter)) {
+                        event.preventDefault();
+                        event.stopImmediatePropagation();
+                        this.delegate.formSubmissionIntercepted(form, submitter);
+                    }
+                }
+            });
+            this.delegate = delegate;
+            this.element = element;
+        }
+        start() {
+            this.element.addEventListener("submit", this.submitBubbled);
+        }
+        stop() {
+            this.element.removeEventListener("submit", this.submitBubbled);
         }
     }
 
@@ -2575,7 +2580,9 @@ var tests_unit = (function (exports, intern) {
                 }
             }
             catch (error) {
-                console.error(error);
+                if (error instanceof AlreadyRenderingError) {
+                    return;
+                }
                 this.view.invalidate();
             }
         }
@@ -2913,8 +2920,10 @@ var tests_unit = (function (exports, intern) {
     }
 
     FrameElement.delegateConstructor = FrameController;
-    customElements.define("turbo-frame", FrameElement);
-    customElements.define("turbo-stream", StreamElement);
+    if (!customElements.get('turbo-frame'))
+        customElements.define("turbo-frame", FrameElement);
+    if (!customElements.get('turbo-stream'))
+        customElements.define("turbo-stream", StreamElement);
 
     (() => {
         let element = document.currentScript;

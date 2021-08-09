@@ -10,7 +10,7 @@ declare type PageViewRenderer = PageRenderer | ErrorRenderer;
 export declare class PageView extends View<Element, PageSnapshot, PageViewRenderer, PageViewDelegate> {
     readonly snapshotCache: SnapshotCache;
     lastRenderedLocation: URL;
-    renderPage(snapshot: PageSnapshot, isPreview?: boolean): Promise<void>;
+    renderPage(snapshot: PageSnapshot, isPreview?: boolean): Promise<undefined>;
     renderError(snapshot: PageSnapshot): void;
     clearSnapshotCache(): void;
     cacheSnapshot(): Promise<void>;
